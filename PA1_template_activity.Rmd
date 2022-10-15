@@ -1,0 +1,84 @@
+---
+title: "Activity Assignment"
+output:
+  html_document:
+    df_print: paged
+---
+
+Reading in the data.frame
+```{r}
+data0 <- na.omit(read.csv("./data/activity.csv")) ##reading in data
+data0$date <- as.Date(data0$date)
+str(data0)
+head(data0, n=20)
+```
+
+Total Steps per day
+```{r}
+s <- split(data0, data0$date)  
+    sapply(s, function(x) colSums(x[, c("steps", "interval")], na.rm = TRUE)) ##calculates total steps for eacy day. 
+        ##you can also use aggregate
+data1 <- aggregate(data0$steps, by = list(Steps.Date = data0$date), FUN ="sum")
+data1 <- as.data.frame(data1)
+colnames(data1) <- c("Date", "Sum_Steps")
+head(data1)
+    
+hist(data1$Sum_Steps, col= "orange", breaks=36, xlab="No. of Steps", main= "Sum of Steps per Day")
+mean_step <- mean(data1$Sum_Steps)
+mean_step
+median_step <- median(data1$Sum_Steps)
+median_step
+```
+
+Plotting Average Steps
+```{r}
+data2 <- aggregate(data0$steps, by = list(Interval = data0$interval), FUN ="mean")
+colnames(data2) <- c("Interval", "Average_Steps")
+head(data2)
+with(data2, plot(Interval, Average_Steps, col = "purple", 
+                 main= "Average Daily Activity", 
+                 xlab= "5min Intervals", 
+                 ylab="Average no. Steps", 
+                 type= "l"))
+max <- which.max(data2$Average_Steps)
+max2 <- data2[max,1]
+max2
+```
+
+Working with NA's
+```{r}
+dataNA <- read.csv("./data/activity.csv")
+length(which(is.na(dataNA))) ##number of NA's
+install.packages("Hmisc")
+library(Hmisc)
+  dataFill <- dataNA
+    dataFill$steps <- impute(dataNA$steps, fun=mean)
+data3 <- aggregate(dataFill$steps, by = list(Date = dataFill$date), FUN ="sum")
+data3 <- as.data.frame(data3)
+    colnames(data3) <- c("Date", "Sum_Steps")
+    head(data3)
+hist(data3$Sum_Steps, col= "orange", breaks=36, xlab="No. of Steps", main= "Sum of Steps per Day")
+mean_step <- mean(data3$Sum_Steps)
+mean_step
+median_step <- median(data3$Sum_Steps)
+median_step
+```
+
+Weekday and Weekend
+```{r}
+dataFill$date <- as.Date(dataFill$date)
+dataFill$weekday <- weekdays(dataFill$date)
+dataFill$weekend <- ifelse(dataFill$weekday=="Saturday" | dataFill$weekday=="Sunday", "Weekend", "Weekday" )
+head(dataFill)
+library(ggplot2)
+data4 <- aggregate(dataFill$steps , by= list(dataFill$weekend, dataFill$interval), FUN = "mean") ##aggregating by interval, and weekend code.
+data4 <- as.data.frame(data4)
+    colnames(data4) <- c("Weekend", "Interval", "Mean_Steps")
+ggplot(data4, aes(x=Interval, y=Mean_Steps, color=Weekend)) + 
+  geom_line()+
+  facet_grid(Weekend ~.) +
+  xlab("Interval") + 
+  ylab("Mean Steps") +
+  ggtitle(" Average Number of Steps in Each Interval by Weekday/Weekend")
+```
+
